@@ -20,16 +20,20 @@
       <td>
         <%= form.check_box :no_expiration %>
         <%= form.label :no_expiration %><br />
+        <div id="article_expired_at">
         <%= form.datetime_select :expired_at,
           start_year: 2000, end_year: Time.now.year + 1,
           use_month_numbers: true %>
+        </div>
       </td>
     </tr>
   <tr>
     <th><%= Article.human_attribute_name(:member_only) %></th>
     <td>
-      <%= form.check_box :member_only %>
+      <%= form.check_box :member_only,
+        disabled: !current_member.administrator? %>
       <%= form.label :member_only %>
     </td>
   </tr>
+
 </table>

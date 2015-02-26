@@ -11,17 +11,10 @@ class Member < ActiveRecord::Base
     uniqueness: { case_sensitive: false }
   validates :full_name, length: { maximum: 20 }
   validate :check_email
+  validates :password, presence: { on: :create},
+     confirmation: { allow_blank: true}
 
-  class << self
-    def search(query)
-      rel = order("number")
-      if query.present?
-        rel = rel.where("name LIKE ? OR full_name LIKE ?",
-          "%#{query}%", "%#{query}%")
-      end
-      rel
-    end
-  end
+  attr_accessor :password, :password_confirmation
 
   def clear_expired_at
     self.expired_at = nil if @no_expiration
@@ -33,10 +26,38 @@ class Member < ActiveRecord::Base
     end
   end
 
+  def password=(val)
+    if val.present?
+      self.hashed_password = BCrypt::Password.create(val)
+    end
+    @password = val
+  end
+
   private
   def check_email
     if email.present?
       errors.add(:email, :invalid) unless well_formed_as_email_address(email)
     end
+  end
+
+  class << self
+  def search(query)
+    rel = order("number")
+      if query.present?
+        rel = rel.where("name LIKE ? OR full_name LIKE ?",
+          "%#{query}%", "%#{query}%")
+      end
+    rel
+  end
+
+  def authenticate(name, password)
+    member = find_by(name: name)
+    if member && member.hashed_password.present? &&
+      BCrypt::Password.new(member.hashed_password) == password
+      member
+    else
+      nil
+    end
+  end
   end
 end

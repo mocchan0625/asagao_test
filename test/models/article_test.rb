@@ -28,20 +28,26 @@ class ArticleTest < ActiveSupport::TestCase
     assert article.valid?
     assert_nil article.expired_at
   end
-  test "readable" do
+  test "readable_for" do
     article1 = FactoryGirl.create(:article, title: "現在",
-      released_at: 1.day.ago, expired_at: 1.day.from_now)
+      released_at: 1.day.ago, expired_at: 1.days.from_now)
     article2 = FactoryGirl.create(:article, title: "過去",
-      released_at: 2.days.ago, expired_at: 1.day.ago)
+      released_at: 2.days.ago, expired_at: 1.days.ago)
     article3 = FactoryGirl.create(:article, title: "未来",
       released_at: 1.day.from_now, expired_at: 2.days.from_now)
     article4 = FactoryGirl.create(:article, title: "終了日なし",
       released_at: 1.day.ago, expired_at: nil)
+    article5 = FactoryGirl.create(:article, title: "会員のみ",
+      released_at: 1.day.ago, expired_at: nil, member_only: true)
 
-    articles = Article.readable
+    articles = Article.readable_for(nil)
     assert_includes articles, article1, "現在の記事が含まれる"
     assert_not_includes articles, article2, "過去の記事は含まれない"
     assert_not_includes articles, article3, "未来の記事は含まれない"
     assert_includes articles, article4, "expiredがnilの場合"
+    assert_not_includes articles, article5, "会員限定記事は含まれない"
+
+    articles = Article.readable_for(FactoryGirl.create(:member))
+    assert_includes articles, article5, "会員限定記事が含まれる"
   end
 end
